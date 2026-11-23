@@ -1,0 +1,10 @@
+# 画面のファイルとして公開しないもの（Workers の静的アセットから除く）
+.git
+.assetsignore
+wrangler.jsonc
+worker.js
+functions
+CLAUDE.md
+README.md
+_headers
+node_modules
