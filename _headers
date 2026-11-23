@@ -1,0 +1,6 @@
+# Cloudflare Pages の応答ヘッダー（安全のための設定）
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-ancestors 'none'; form-action https://github.com

@@ -1,5 +1,6 @@
-// Netlify Function: GitHub アプリのログインで受け取った code（または refresh_token）を、アクセストークンに交換する。
-// クライアントシークレットはブラウザに置けないため、ここ（サーバー側）で使う。値は Netlify の環境変数にだけ置く。
+// Cloudflare Pages Functions: GitHub アプリのログインで受け取った code（または refresh_token）を、アクセストークンに交換する。
+// クライアントシークレットはブラウザに置けないため、ここ（サーバー側）で使う。値は Cloudflare の環境変数（Secret）にだけ置く。
+// /api/github-token に対応する
 
 const TOKEN_URL = "https://github.com/login/oauth/access_token";
 
@@ -10,25 +11,26 @@ function json(body, status = 200) {
   });
 }
 
-export default async function handler(req) {
-  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+/** テストから呼べるよう、処理の本体を分けている */
+export async function exchangeToken(request, env, fetchImpl = fetch) {
+  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
   // 別のサイトからの呼び出しは断る（同じサイトの画面からだけ受け付ける）
-  const origin = req.headers.get("origin");
-  if (origin && origin !== new URL(req.url).origin) return json({ error: "forbidden_origin" }, 403);
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) return json({ error: "forbidden_origin" }, 403);
 
-  const body = await req.json().catch(() => null);
+  const body = await request.json().catch(() => null);
   let grant;
   if (typeof body?.code === "string" && body.code !== "") grant = { code: body.code };
   else if (typeof body?.refresh_token === "string" && body.refresh_token !== "") {
     grant = { grant_type: "refresh_token", refresh_token: body.refresh_token };
   } else return json({ error: "bad_request" }, 400);
 
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const clientId = env.GITHUB_CLIENT_ID;
+  const clientSecret = env.GITHUB_CLIENT_SECRET;
   if (!clientId || !clientSecret) return json({ error: "server_not_configured" }, 500);
 
-  const res = await fetch(TOKEN_URL, {
+  const res = await fetchImpl(TOKEN_URL, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, ...grant }),
@@ -46,4 +48,6 @@ export default async function handler(req) {
   });
 }
 
-export const config = { path: "/api/github-token" };
+export function onRequest({ request, env }) {
+  return exchangeToken(request, env);
+}

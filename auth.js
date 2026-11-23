@@ -65,7 +65,7 @@ export function isLoggedIn() {
 /** github.com のログイン画面へ移動する */
 export async function startLogin() {
   const cfg = await fetch("/api/config").then((r) => r.json()).catch(() => ({}));
-  if (!cfg.client_id) throw new Error("ログインの設定がまだです（Netlify に GITHUB_CLIENT_ID が未設定）");
+  if (!cfg.client_id) throw new Error("ログインの設定がまだです（Cloudflare に GITHUB_CLIENT_ID が未設定か、設定後に公開し直していない）");
   const state = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
   write(sessionStorage, STATE_KEY, state);
   const url = new URL("https://github.com/login/oauth/authorize");
